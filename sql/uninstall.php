@@ -24,11 +24,8 @@ if (!defined('_PS_VERSION_')) {
 
 $sql = [];
 
-// Example table deletion (commented by default)
-// Uncomment and adapt according to your needs
-/*
-$sql[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'awmodulebase_example`;';
-*/
+$sql[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'awpickupstore_carrier`;';
+$sql[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'awpickupstore_appointment`;';
 
 foreach ($sql as $query) {
     if (!Db::getInstance()->execute($query)) {
