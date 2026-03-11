@@ -2,6 +2,11 @@
 
 {% form_theme carriersForm '@PrestaShop/Admin/TwigTemplateForm/prestashop_ui_kit.html.twig' %}
 
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('../modules/awpickupstore/views/js/admin/form.js') }}"></script>
+{% endblock %}
+
 {% block content %}
   {{ form_start(carriersForm) }}
 

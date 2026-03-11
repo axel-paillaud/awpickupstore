@@ -1,1 +1,8 @@
-console.log("hello from form.js !");
+$(document).ready(function () {
+  window.prestashop.component.initComponents(
+    [
+      'TranslatableField',
+      'TranslatableInput',
+    ],
+  );
+});
