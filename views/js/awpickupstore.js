@@ -59,9 +59,13 @@
     return null;
   }
 
-  /** Remove any previously injected awpickupstore content. */
+  /** Remove any previously injected awpickupstore content (destroy Flatpickr first). */
   function clearAwContent() {
     document.querySelectorAll('.awpickupstore-extra').forEach(function (el) {
+      var fpInput = el.querySelector('.awpickupstore-datetime-picker');
+      if (fpInput && fpInput._flatpickr) {
+        fpInput._flatpickr.destroy();
+      }
       el.remove();
     });
   }
@@ -80,17 +84,8 @@
         + '<i class="material-icons awpickupstore-icon">event</i> '
         + i18n.appointment_label
         + '</p>'
-        + '<div class="row g-2 mx-0">'
-        + '<div class="col-auto">'
-        + '<input type="date" name="awpickupstore_date" class="form-control"'
-        + ' min="' + cfg.min_date + '" required'
-        + ' aria-label="' + i18n.date_label + '">'
-        + '</div>'
-        + '<div class="col-auto mt-1">'
-        + '<input type="time" name="awpickupstore_time" class="form-control"'
-        + ' required aria-label="' + i18n.time_label + '">'
-        + '</div>'
-        + '</div>'
+        + '<input type="text" class="form-control awpickupstore-datetime-picker" placeholder="' + i18n.date_placeholder + '" readonly>'
+        + '<input type="hidden" name="awpickupstore_datetime">'
         + '</div>';
     }
 
@@ -98,8 +93,32 @@
     return html;
   }
 
+  /** Initialise Flatpickr on the newly injected datetime input. */
+  function initFlatpickr(container, cfg) {
+    var pickerInput = container.querySelector('.awpickupstore-datetime-picker');
+    var hiddenInput = container.querySelector('input[name="awpickupstore_datetime"]');
+    if (!pickerInput || !hiddenInput || !window.flatpickr) return;
+
+    var fpOptions = {
+      enableTime: true,
+      dateFormat: 'Y-m-d H:i',
+      minDate: cfg.min_date,
+      time_24hr: true,
+      onChange: function (selectedDates, dateStr) {
+        hiddenInput.value = dateStr;
+      },
+    };
+
+    // Apply French locale if available
+    if (config.locale_iso === 'fr' && flatpickr.l10ns && flatpickr.l10ns.fr) {
+      fpOptions.locale = flatpickr.l10ns.fr;
+    }
+
+    flatpickr(pickerInput, fpOptions);
+  }
+
   // Track the last injected carrier to avoid re-injecting on unrelated form changes
-  // (PS fires updatedDeliveryForm on any input change in #js-delivery, including our date picker)
+  // (PS fires updatedDeliveryForm on any input change in #js-delivery, including our picker)
   var activeCarrierId = 0;
 
   function update() {
@@ -112,7 +131,12 @@
     if (!cfg) return;
     var container = findExtraContent(id);
     if (!container) return;
+
     container.insertAdjacentHTML('beforeend', buildHtml(cfg));
+
+    if (cfg.require_appointment) {
+      initFlatpickr(container, cfg);
+    }
   }
 
   // Initial render on page load

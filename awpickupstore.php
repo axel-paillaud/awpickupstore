@@ -129,11 +129,26 @@ class AwPickupStore extends Module
         }
 
         $this->context->controller->registerStylesheet(
+            'module-awpickupstore-flatpickr',
+            'modules/' . $this->name . '/views/css/lib/flatpickr.min.css',
+            ['media' => 'all', 'priority' => 190]
+        );
+        $this->context->controller->registerStylesheet(
             'module-awpickupstore-style',
             'modules/' . $this->name . '/views/css/awpickupstore.css',
             ['media' => 'all', 'priority' => 200]
         );
 
+        $this->context->controller->registerJavascript(
+            'module-awpickupstore-flatpickr',
+            'modules/' . $this->name . '/views/js/lib/flatpickr.min.js',
+            ['position' => 'bottom', 'priority' => 190]
+        );
+        $this->context->controller->registerJavascript(
+            'module-awpickupstore-flatpickr-fr',
+            'modules/' . $this->name . '/views/js/lib/flatpickr.l10n.fr.js',
+            ['position' => 'bottom', 'priority' => 195]
+        );
         $this->context->controller->registerJavascript(
             'module-awpickupstore-script',
             'modules/' . $this->name . '/views/js/awpickupstore.js',
@@ -169,11 +184,11 @@ class AwPickupStore extends Module
         }
 
         $this->context->smarty->assign('awpickupstore_config_json', json_encode([
-            'carriers' => $configMap,
-            'i18n'     => [
+            'carriers'   => $configMap,
+            'locale_iso' => $this->context->language->iso_code,
+            'i18n'       => [
                 'appointment_label' => $this->trans('Choose your appointment date and time', [], 'Modules.Awpickupstore.Shop'),
-                'date_label'        => $this->trans('Appointment date', [], 'Modules.Awpickupstore.Shop'),
-                'time_label'        => $this->trans('Appointment time', [], 'Modules.Awpickupstore.Shop'),
+                'date_placeholder'  => $this->trans('Select a date and time', [], 'Modules.Awpickupstore.Shop'),
             ],
         ], JSON_HEX_TAG | JSON_HEX_AMP));
 
@@ -202,10 +217,9 @@ class AwPickupStore extends Module
             return;
         }
 
-        $date = Tools::getValue('awpickupstore_date');
-        $time = Tools::getValue('awpickupstore_time');
+        $datetime = Tools::getValue('awpickupstore_datetime');
 
-        if (empty($date) || empty($time)) {
+        if (empty($datetime)) {
             $this->context->controller->errors[] = $this->trans(
                 'Please select an appointment date and time.',
                 [],
@@ -215,7 +229,7 @@ class AwPickupStore extends Module
             return;
         }
 
-        $datetime = date('Y-m-d H:i:s', strtotime($date . ' ' . $time));
+        $datetime = date('Y-m-d H:i:s', strtotime($datetime));
         $idCart   = (int) $params['cart']->id;
 
         $this->repository->upsertAppointment($idCart, $datetime);
