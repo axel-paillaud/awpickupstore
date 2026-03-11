@@ -9,25 +9,21 @@ declare(strict_types=1);
 
 namespace Axelweb\AwPickupStore\Controller;
 
-use PrestaShop\PrestaShop\Core\Form\FormHandlerInterface;
-use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
+use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminConfigurationController extends PrestaShopAdminController
+class AdminConfigurationController extends FrameworkBundleAdminController
 {
-    public function __construct(
-        private readonly FormHandlerInterface $formHandler
-    ) {
-    }
-
     public function index(Request $request): Response
     {
-        $form = $this->formHandler->getForm();
+        $formHandler = $this->get('axelweb.awpickupstore.form.carrier_settings_form_handler');
+
+        $form = $formHandler->getForm();
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $errors = $this->formHandler->save($form->getData());
+            $errors = $formHandler->save($form->getData());
 
             if (empty($errors)) {
                 $this->addFlash('success', $this->trans('Successful update.', 'Admin.Notifications.Success'));

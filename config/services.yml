@@ -33,8 +33,3 @@ services:
       - 'Axelweb\AwPickupStore\Form\CarrierSettingsFormType'
       - 'AwPickupStore'
 
-  Axelweb\AwPickupStore\Controller\AdminConfigurationController:
-    arguments:
-      $formHandler: '@axelweb.awpickupstore.form.carrier_settings_form_handler'
-    tags:
-      - { name: controller.service_arguments }
