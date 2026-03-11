@@ -33,8 +33,7 @@ class CarrierSettingsFormDataProvider implements FormDataProviderInterface
      */
     public function getData(): array
     {
-        $idLang   = (int) \Context::getContext()->language->id;
-        $carriers = $this->repository->getAllCarriersWithConfig($idLang);
+        $carriers = $this->repository->getAllCarriersWithConfig();
 
         return [
             'carriers' => array_map(static function (array $row): array {

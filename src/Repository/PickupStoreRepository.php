@@ -80,19 +80,18 @@ class PickupStoreRepository
      * Return all active, non-deleted carriers joined with their awpickupstore config (if any).
      *
      * @return array<int, array{id_carrier: string, name: string, require_appointment: string|null, message: string|null}>
+     * Note: carrier name is stored directly in ps_carrier (not multilingual). ps_carrier_lang only holds `delay`.
      */
-    public function getAllCarriersWithConfig(int $idLang): array
+    public function getAllCarriersWithConfig(): array
     {
         return $this->db->executeS(
-            'SELECT c.`id_carrier`, cl.`name`,
+            'SELECT c.`id_carrier`, c.`name`,
                     apc.`require_appointment`, apc.`message`
              FROM `' . _DB_PREFIX_ . 'carrier` c
-             LEFT JOIN `' . _DB_PREFIX_ . 'carrier_lang` cl
-                ON c.`id_carrier` = cl.`id_carrier` AND cl.`id_lang` = ' . $idLang . '
              LEFT JOIN `' . _DB_PREFIX_ . 'awpickupstore_carrier` apc
                 ON c.`id_carrier` = apc.`id_carrier`
              WHERE c.`deleted` = 0
-             ORDER BY cl.`name` ASC'
+             ORDER BY c.`name` ASC'
         ) ?: [];
     }
 
