@@ -24,6 +24,7 @@ if (!defined('_PS_VERSION_')) {
 
 $sql = [];
 
+$sql[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'awpickupstore_carrier_lang`;';
 $sql[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'awpickupstore_carrier`;';
 $sql[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'awpickupstore_appointment`;';
 

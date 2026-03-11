@@ -25,10 +25,17 @@ if (!defined('_PS_VERSION_')) {
 $sql = [];
 
 $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'awpickupstore_carrier` (
-    `id_carrier`            INT(10) UNSIGNED NOT NULL,
-    `require_appointment`   TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
-    `message`               TEXT DEFAULT NULL,
+    `id_carrier`          INT(10) UNSIGNED NOT NULL,
+    `require_appointment` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+    `show_store_picker`   TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (`id_carrier`)
+) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;';
+
+$sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'awpickupstore_carrier_lang` (
+    `id_carrier` INT(10) UNSIGNED NOT NULL,
+    `id_lang`    INT(10) UNSIGNED NOT NULL,
+    `message`    TEXT DEFAULT NULL,
+    PRIMARY KEY (`id_carrier`, `id_lang`)
 ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;';
 
 $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'awpickupstore_appointment` (
