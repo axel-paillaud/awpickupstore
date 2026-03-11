@@ -1,17 +1,7 @@
-awmodulebase_index:
-  path: /awmodulebase/index
-  methods: [GET]
-  defaults:
-    _controller: 'Axelweb\AwModuleBase\Controller\AwModuleBaseController::index'
-    # Needed to work with tab system
-    _legacy_controller: AwModuleBase
-    _legacy_link: AwModuleBase
-
-awmodulebase_form_configuration:
-  path: /awmodulebase/configuration
+awpickupstore_form_configuration:
+  path: /awpickupstore/configuration
   methods: [GET, POST]
   defaults:
-    _controller: 'Axelweb\AwModuleBase\Controller\AdminConfigurationController::index'
-    # Needed to work with tab system
-    _legacy_controller: AdminAwModuleBase
-    _legacy_link: AdminAwModuleBase
+    _controller: 'Axelweb\AwPickupStore\Controller\AdminConfigurationController::index'
+    _legacy_controller: AdminAwPickupStore
+    _legacy_link: AdminAwPickupStore

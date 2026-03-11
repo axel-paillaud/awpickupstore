@@ -2,28 +2,39 @@ services:
   _defaults:
     public: true
 
-  # General form type
-  axelweb.awmodulebase.form.type.general:
-    class: 'Axelweb\AwModuleBase\Form\GeneralFormType'
+  axelweb.awpickupstore.repository.pickup_store:
+    class: 'Axelweb\AwPickupStore\Repository\PickupStoreRepository'
+
+  axelweb.awpickupstore.form.type.carrier_entry:
+    class: 'Axelweb\AwPickupStore\Form\CarrierEntryType'
     parent: 'form.type.translatable.aware'
     public: true
     tags:
       - { name: form.type }
 
-  axelweb.awmodulebase.form.general_data_configuration:
-    class: 'Axelweb\AwModuleBase\Form\GeneralDataConfiguration'
-    arguments: ['@prestashop.adapter.legacy.configuration']
+  axelweb.awpickupstore.form.type.carrier_settings:
+    class: 'Axelweb\AwPickupStore\Form\CarrierSettingsFormType'
+    parent: 'form.type.translatable.aware'
+    public: true
+    tags:
+      - { name: form.type }
 
-  axelweb.awmodulebase.form.general_form_data_provider:
-    class: 'Axelweb\AwModuleBase\Form\GeneralFormDataProvider'
+  axelweb.awpickupstore.form.carrier_settings_data_provider:
+    class: 'Axelweb\AwPickupStore\Form\CarrierSettingsFormDataProvider'
     arguments:
-      - '@axelweb.awmodulebase.form.general_data_configuration'
+      - '@axelweb.awpickupstore.repository.pickup_store'
 
-  axelweb.awmodulebase.form.general_form_data_handler:
+  axelweb.awpickupstore.form.carrier_settings_form_handler:
     class: 'PrestaShop\PrestaShop\Core\Form\Handler'
     arguments:
       - '@form.factory'
       - '@prestashop.core.hook.dispatcher'
-      - '@axelweb.awmodulebase.form.general_form_data_provider'
-      - 'Axelweb\AwModuleBase\Form\GeneralFormType'
-      - 'AwModuleBase'
+      - '@axelweb.awpickupstore.form.carrier_settings_data_provider'
+      - 'Axelweb\AwPickupStore\Form\CarrierSettingsFormType'
+      - 'AwPickupStore'
+
+  Axelweb\AwPickupStore\Controller\AdminConfigurationController:
+    arguments:
+      $formHandler: '@axelweb.awpickupstore.form.carrier_settings_form_handler'
+    tags:
+      - { name: controller.service_arguments }
