@@ -1,36 +1,63 @@
 {% extends '@PrestaShop/Admin/layout.html.twig' %}
 
-{% form_theme generalForm '@PrestaShop/Admin/TwigTemplateForm/prestashop_ui_kit.html.twig' %}
+{% form_theme carriersForm '@PrestaShop/Admin/TwigTemplateForm/prestashop_ui_kit.html.twig' %}
 
 {% block content %}
-  {{ form_start(generalForm) }}
+  {{ form_start(carriersForm) }}
+
   <div class="card">
     <h3 class="card-header">
-      <i class="material-icons">settings</i> {{ 'AwModuleBase Settings'|trans({}, 'Modules.Awmodulebase.Admin') }}
+      <i class="material-icons">local_shipping</i>
+      {{ 'Pickup Store — Carrier Settings'|trans({}, 'Modules.Awpickupstore.Admin') }}
     </h3>
+
     <div class="card-body">
-      <div class="form-wrapper">
-        {{ form_widget(generalForm) }}
-      </div>
+      {% if carriersForm.carriers|length == 0 %}
+        <p class="text-muted">
+          {{ 'No active carriers found. Create carriers in Shipping > Carriers first.'|trans({}, 'Modules.Awpickupstore.Admin') }}
+        </p>
+      {% else %}
+        <p class="text-muted mb-3">
+          {{ 'For each carrier, you can require an appointment date/time at checkout and/or display a custom message below the carrier option.'|trans({}, 'Modules.Awpickupstore.Admin') }}
+        </p>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{{ 'Carrier'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+              <th class="text-center">{{ 'Require appointment'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+              <th>{{ 'Checkout message'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in carriersForm.carriers %}
+              <tr>
+                <td class="align-middle">
+                  <strong>{{ entry.vars.data.name }}</strong>
+                  {{ form_widget(entry.id_carrier) }}
+                </td>
+                <td class="text-center align-middle">
+                  {{ form_widget(entry.require_appointment) }}
+                </td>
+                <td>
+                  {{ form_widget(entry.message) }}
+                  {{ form_errors(entry.message) }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
     </div>
+
     <div class="card-footer">
       <div class="d-flex justify-content-end">
-        <button class="btn btn-primary float-right" id="save-button">
+        <button class="btn btn-primary" id="save-button">
           {{ 'Save'|trans({}, 'Admin.Actions') }}
         </button>
       </div>
     </div>
   </div>
-  {{ form_end(generalForm) }}
-{% endblock %}
 
-
-{% block stylesheets %}
-  {{ parent() }}
-  <link rel="stylesheet" href="{{ asset('../modules/smartpack/views/css/admin/form.css') }}">
-{% endblock %}
-
-{% block javascripts %}
-{{ parent() }}
-  <script src="{{ asset('../modules/smartpack/views/js/admin/form.js') }}"></script>
+  {{ form_end(carriersForm) }}
 {% endblock %}
