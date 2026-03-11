@@ -1,54 +1,47 @@
 <?php
 /**
- * Copyright since 2007 PrestaShop SA and Contributors
- * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License version 3.0
- * that is bundled with this package in the file LICENSE.md.
- * It is also available through the world-wide-web at this URL:
- * https://opensource.org/licenses/AFL-3.0
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@prestashop.com so we can send you a copy immediately.
- *
  * @author    Axelweb <contact@axelweb.fr>
- * @copyright 2007-2024 Axelweb
+ * @copyright 2026 Axelweb
  * @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
 declare(strict_types=1);
 
-namespace Axelweb\AwModuleBase\Controller;
+namespace Axelweb\AwPickupStore\Controller;
 
-use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
+use PrestaShop\PrestaShop\Core\Form\FormHandlerInterface;
+use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminConfigurationController extends FrameworkBundleAdminController
+class AdminConfigurationController extends PrestaShopAdminController
 {
+    public function __construct(
+        private readonly FormHandlerInterface $formHandler
+    ) {
+    }
+
     public function index(Request $request): Response
     {
-        $generalFormDataHandler = $this->get('axelweb.awmodulebase.form.general_form_data_handler');
+        $form = $this->formHandler->getForm();
+        $form->handleRequest($request);
 
-        $generalForm = $generalFormDataHandler->getForm();
-        $generalForm->handleRequest($request);
-
-        if ($generalForm->isSubmitted() && $generalForm->isValid()) {
-            $errors = $generalFormDataHandler->save($generalForm->getData());
+        if ($form->isSubmitted() && $form->isValid()) {
+            $errors = $this->formHandler->save($form->getData());
 
             if (empty($errors)) {
                 $this->addFlash('success', $this->trans('Successful update.', 'Admin.Notifications.Success'));
 
-                return $this->redirectToRoute('awmodulebase_form_configuration');
+                return $this->redirectToRoute('awpickupstore_form_configuration');
             }
 
-            $this->flashErrors($errors);
+            foreach ($errors as $error) {
+                $this->addFlash('error', $error);
+            }
         }
 
-        return $this->render('@Modules/awmodulebase/views/templates/admin/form.html.twig', [
-            'generalForm' => $generalForm->createView(),
+        return $this->render('@Modules/awpickupstore/views/templates/admin/form.html.twig', [
+            'carriersForm' => $form->createView(),
         ]);
     }
 }
