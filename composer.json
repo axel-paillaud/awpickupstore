@@ -1,6 +1,6 @@
 {
-  "name": "axelweb/awmodulebase",
-  "description": "PrestaShop module base template for development",
+  "name": "axelweb/awpickupstore",
+  "description": "Prestashop module to add temporary in-store pickup options and specify an appointment date.",
   "type": "prestashop-module",
   "license": "AFL-3.0",
   "authors": [
@@ -11,7 +11,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "Axelweb\\AwModuleBase\\": "src/"
+      "Axelweb\\AwPickupStore\\": "src/"
     }
   },
   "require": {
@@ -19,7 +19,7 @@
   },
   "config": {
     "prepend-autoloader": false,
-    "autoloader-suffix": "AwModuleBase"
+    "autoloader-suffix": "AwPickupStore"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.89"

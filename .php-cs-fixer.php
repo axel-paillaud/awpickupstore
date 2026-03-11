@@ -3,7 +3,7 @@
 $finder = PhpCsFixer\Finder::create()->in([
     __DIR__.'/src',
 ])
-->append([__DIR__.'/awmodulebase.php'])
+->append([__DIR__.'/awpickupstore.php'])
 ->notPath([
     'Unit/Resources/config/params.php',
     'Unit/Resources/config/params_modified.php',
