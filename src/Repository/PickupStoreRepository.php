@@ -19,15 +19,15 @@ class PickupStoreRepository
     }
 
     /**
-     * Get carrier configuration (message + require_appointment).
+     * Get carrier configuration (require_appointment, show_store_picker).
      * Returns null if the carrier is not configured in this module.
      *
-     * @return array{require_appointment: string, message: string|null}|null
+     * @return array{require_appointment: string, show_store_picker: string}|null
      */
     public function getCarrierConfig(int $idCarrier): ?array
     {
         $row = $this->db->getRow(
-            'SELECT `require_appointment`, `message`
+            'SELECT `require_appointment`, `show_store_picker`
              FROM `' . _DB_PREFIX_ . 'awpickupstore_carrier`
              WHERE `id_carrier` = ' . $idCarrier
         );
@@ -36,8 +36,70 @@ class PickupStoreRepository
     }
 
     /**
+     * Return all active, non-deleted carriers with their awpickupstore config.
+     * Used by the BO config form — no message column (loaded per-carrier via getAllCarrierMessages).
+     *
+     * @return array<int, array{id_carrier: string, name: string, require_appointment: string|null, show_store_picker: string|null}>
+     */
+    public function getAllCarriersBasic(): array
+    {
+        return $this->db->executeS(
+            'SELECT c.`id_carrier`, c.`name`,
+                    apc.`require_appointment`, apc.`show_store_picker`
+             FROM `' . _DB_PREFIX_ . 'carrier` c
+             LEFT JOIN `' . _DB_PREFIX_ . 'awpickupstore_carrier` apc
+                ON c.`id_carrier` = apc.`id_carrier`
+             WHERE c.`deleted` = 0
+             ORDER BY c.`name` ASC'
+        ) ?: [];
+    }
+
+    /**
+     * Return all active, non-deleted carriers with their config and the message
+     * in the given language. Used by hookDisplayBeforeCarrier (front-office).
+     *
+     * @return array<int, array{id_carrier: string, name: string, require_appointment: string|null, show_store_picker: string|null, message: string|null}>
+     */
+    public function getAllCarriersWithConfig(int $idLang): array
+    {
+        return $this->db->executeS(
+            'SELECT c.`id_carrier`, c.`name`,
+                    apc.`require_appointment`, apc.`show_store_picker`,
+                    apcl.`message`
+             FROM `' . _DB_PREFIX_ . 'carrier` c
+             LEFT JOIN `' . _DB_PREFIX_ . 'awpickupstore_carrier` apc
+                ON c.`id_carrier` = apc.`id_carrier`
+             LEFT JOIN `' . _DB_PREFIX_ . 'awpickupstore_carrier_lang` apcl
+                ON apc.`id_carrier` = apcl.`id_carrier` AND apcl.`id_lang` = ' . $idLang . '
+             WHERE c.`deleted` = 0
+             ORDER BY c.`name` ASC'
+        ) ?: [];
+    }
+
+    /**
+     * Return all messages for a carrier, keyed by id_lang.
+     * Used to populate the BO form with per-language textareas.
+     *
+     * @return array<int, string>
+     */
+    public function getAllCarrierMessages(int $idCarrier): array
+    {
+        $rows = $this->db->executeS(
+            'SELECT `id_lang`, `message`
+             FROM `' . _DB_PREFIX_ . 'awpickupstore_carrier_lang`
+             WHERE `id_carrier` = ' . $idCarrier
+        ) ?: [];
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) $row['id_lang']] = (string) $row['message'];
+        }
+
+        return $result;
+    }
+
+    /**
      * Insert or update an appointment for a given cart.
-     * $datetime must be a valid 'Y-m-d H:i:s' string (caller's responsibility).
      */
     public function upsertAppointment(int $idCart, string $datetime): bool
     {
@@ -51,7 +113,6 @@ class PickupStoreRepository
 
     /**
      * Attach an order ID to an appointment stored by cart ID.
-     * Called once the order is created (actionValidateOrder).
      */
     public function attachOrderToAppointment(int $idCart, int $idOrder): bool
     {
@@ -77,46 +138,60 @@ class PickupStoreRepository
     }
 
     /**
-     * Return all active, non-deleted carriers joined with their awpickupstore config (if any).
+     * Save (upsert) carrier configuration and per-language messages.
+     * If all fields are empty/false, removes the carrier row and all its messages.
      *
-     * @return array<int, array{id_carrier: string, name: string, require_appointment: string|null, message: string|null}>
-     * Note: carrier name is stored directly in ps_carrier (not multilingual). ps_carrier_lang only holds `delay`.
+     * @param array<int, string> $messages Keyed by id_lang
      */
-    public function getAllCarriersWithConfig(): array
-    {
-        return $this->db->executeS(
-            'SELECT c.`id_carrier`, c.`name`,
-                    apc.`require_appointment`, apc.`message`
-             FROM `' . _DB_PREFIX_ . 'carrier` c
-             LEFT JOIN `' . _DB_PREFIX_ . 'awpickupstore_carrier` apc
-                ON c.`id_carrier` = apc.`id_carrier`
-             WHERE c.`deleted` = 0
-             ORDER BY c.`name` ASC'
-        ) ?: [];
-    }
+    public function saveCarrierConfig(
+        int $idCarrier,
+        bool $requireAppointment,
+        bool $showStorePicker,
+        array $messages
+    ): bool {
+        $messages = array_filter(
+            $messages,
+            static fn (string $msg): bool => trim($msg) !== ''
+        );
 
-    /**
-     * Save (upsert) carrier configuration.
-     * If both message and require_appointment are empty/false, removes the row.
-     */
-    public function saveCarrierConfig(int $idCarrier, bool $requireAppointment, string $message): bool
-    {
-        $message = trim($message);
+        if (!$requireAppointment && !$showStorePicker && empty($messages)) {
+            $this->db->execute(
+                'DELETE FROM `' . _DB_PREFIX_ . 'awpickupstore_carrier_lang`
+                 WHERE `id_carrier` = ' . $idCarrier
+            );
 
-        if (!$requireAppointment && $message === '') {
             return (bool) $this->db->execute(
                 'DELETE FROM `' . _DB_PREFIX_ . 'awpickupstore_carrier`
                  WHERE `id_carrier` = ' . $idCarrier
             );
         }
 
-        return (bool) $this->db->execute(
+        $this->db->execute(
             'INSERT INTO `' . _DB_PREFIX_ . 'awpickupstore_carrier`
-                (`id_carrier`, `require_appointment`, `message`)
-             VALUES (' . $idCarrier . ', ' . (int) $requireAppointment . ', \'' . pSQL($message) . '\')
+                (`id_carrier`, `require_appointment`, `show_store_picker`)
+             VALUES (' . $idCarrier . ', ' . (int) $requireAppointment . ', ' . (int) $showStorePicker . ')
              ON DUPLICATE KEY UPDATE
                 `require_appointment` = ' . (int) $requireAppointment . ',
-                `message` = \'' . pSQL($message) . '\''
+                `show_store_picker`   = ' . (int) $showStorePicker
         );
+
+        $this->db->execute(
+            'DELETE FROM `' . _DB_PREFIX_ . 'awpickupstore_carrier_lang`
+             WHERE `id_carrier` = ' . $idCarrier
+        );
+
+        foreach ($messages as $idLang => $message) {
+            $message = trim($message);
+            if ($message === '') {
+                continue;
+            }
+            $this->db->execute(
+                'INSERT INTO `' . _DB_PREFIX_ . 'awpickupstore_carrier_lang`
+                    (`id_carrier`, `id_lang`, `message`)
+                 VALUES (' . $idCarrier . ', ' . (int) $idLang . ', \'' . pSQL($message) . '\')'
+            );
+        }
+
+        return true;
     }
 }
