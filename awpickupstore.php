@@ -40,7 +40,7 @@ class AwPickupStore extends Module
         $this->repository = new PickupStoreRepository();
 
         $this->name = 'awpickupstore';
-        $this->tab = 'administration';
+        $this->tab = 'shipping_logistics';
         $this->version = '1.0.0';
         $this->author = 'Axelweb';
         $this->need_instance = 1;
@@ -74,7 +74,7 @@ class AwPickupStore extends Module
         $installed = parent::install()
             && $this->installDb()
             && $this->registerHook('actionFrontControllerSetMedia')
-            && $this->registerHook('displayCarrierExtraContent')
+            && $this->registerHook('displayBeforeCarrier')
             && $this->registerHook('actionCarrierProcess')
             && $this->registerHook('actionValidateOrder')
             && $this->registerHook('displayAdminOrderMain');
@@ -142,28 +142,40 @@ class AwPickupStore extends Module
     }
 
     /**
-     * Display message and/or appointment picker when a carrier is selected at checkout
+     * Embed carrier config as JSON before the carrier list.
+     * JS reads this and injects message/appointment picker into each carrier's .carrier-extra-content div.
      */
-    public function hookDisplayCarrierExtraContent(array $params): string
+    public function hookDisplayBeforeCarrier(array $params): string
     {
-        $idCarrier = (int) ($params['carrier']['id'] ?? 0);
-        if (!$idCarrier) {
+        $carriers = $this->repository->getAllCarriersWithConfig();
+        $configMap = [];
+        $minDate   = date('Y-m-d');
+
+        foreach ($carriers as $carrier) {
+            if (!$carrier['message'] && !$carrier['require_appointment']) {
+                continue;
+            }
+            $configMap[(int) $carrier['id_carrier']] = [
+                'message'             => $carrier['message'] ?: null,
+                'require_appointment' => (bool) $carrier['require_appointment'],
+                'min_date'            => $minDate,
+            ];
+        }
+
+        if (empty($configMap)) {
             return '';
         }
 
-        $config = $this->repository->getCarrierConfig($idCarrier);
+        $this->context->smarty->assign('awpickupstore_config_json', json_encode([
+            'carriers' => $configMap,
+            'i18n'     => [
+                'appointment_label' => $this->trans('Choose your appointment date and time', [], 'Modules.Awpickupstore.Shop'),
+                'date_label'        => $this->trans('Appointment date', [], 'Modules.Awpickupstore.Shop'),
+                'time_label'        => $this->trans('Appointment time', [], 'Modules.Awpickupstore.Shop'),
+            ],
+        ], JSON_HEX_TAG | JSON_HEX_AMP));
 
-        if (!$config) {
-            return '';
-        }
-
-        $this->context->smarty->assign([
-            'awpickupstore_message'             => $config['message'],
-            'awpickupstore_require_appointment' => (bool) $config['require_appointment'],
-            'awpickupstore_id_carrier'          => $idCarrier,
-        ]);
-
-        return $this->display(__FILE__, 'views/templates/hook/carrier_extra_content.tpl');
+        return $this->display(__FILE__, 'views/templates/hook/before_carrier.tpl');
     }
 
     /**
@@ -232,7 +244,10 @@ class AwPickupStore extends Module
             return '';
         }
 
-        $this->context->smarty->assign('awpickupstore_appointment_datetime', $datetime);
+        $this->context->smarty->assign(
+            'awpickupstore_appointment_datetime',
+            date('d/m/Y à H\hi', strtotime($datetime))
+        );
 
         return $this->display(__FILE__, 'views/templates/hook/admin_order.tpl');
     }
