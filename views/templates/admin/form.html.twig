@@ -18,7 +18,7 @@
         </p>
       {% else %}
         <p class="text-muted mb-3">
-          {{ 'For each carrier, you can require an appointment date/time at checkout and/or display a custom message below the carrier option.'|trans({}, 'Modules.Awpickupstore.Admin') }}
+          {{ 'For each carrier, you can require an appointment date/time at checkout, show a store picker, and/or display a custom message below the carrier option.'|trans({}, 'Modules.Awpickupstore.Admin') }}
         </p>
 
         <table class="table">
@@ -26,6 +26,7 @@
             <tr>
               <th>{{ 'Carrier'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
               <th class="text-center">{{ 'Require appointment'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+              <th class="text-center">{{ 'Show store picker'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
               <th>{{ 'Checkout message'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
             </tr>
           </thead>
@@ -38,6 +39,9 @@
                 </td>
                 <td class="text-center align-middle">
                   {{ form_widget(entry.require_appointment) }}
+                </td>
+                <td class="text-center align-middle">
+                  {{ form_widget(entry.show_store_picker) }}
                 </td>
                 <td>
                   {{ form_widget(entry.message) }}

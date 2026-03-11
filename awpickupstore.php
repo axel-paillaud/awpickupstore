@@ -147,17 +147,19 @@ class AwPickupStore extends Module
      */
     public function hookDisplayBeforeCarrier(array $params): string
     {
-        $carriers = $this->repository->getAllCarriersWithConfig();
+        $idLang  = (int) $this->context->language->id;
+        $carriers = $this->repository->getAllCarriersWithConfig($idLang);
         $configMap = [];
         $minDate   = date('Y-m-d');
 
         foreach ($carriers as $carrier) {
-            if (!$carrier['message'] && !$carrier['require_appointment']) {
+            if (!$carrier['message'] && !$carrier['require_appointment'] && !$carrier['show_store_picker']) {
                 continue;
             }
             $configMap[(int) $carrier['id_carrier']] = [
                 'message'             => $carrier['message'] ?: null,
                 'require_appointment' => (bool) $carrier['require_appointment'],
+                'show_store_picker'   => (bool) $carrier['show_store_picker'],
                 'min_date'            => $minDate,
             ];
         }
