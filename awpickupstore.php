@@ -183,6 +183,12 @@ class AwPickupStore extends Module
      */
     public function hookActionCarrierProcess(array $params): void
     {
+        // actionCarrierProcess fires both on carrier-selection AJAX and on step confirmation.
+        // Only validate and save on explicit step confirmation (Continue button).
+        if (!Tools::getValue('confirmDeliveryOption')) {
+            return;
+        }
+
         $idCarrier = (int) ($params['cart']->id_carrier ?? 0);
         if (!$idCarrier) {
             return;
