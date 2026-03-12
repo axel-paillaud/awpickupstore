@@ -33,3 +33,22 @@ services:
       - 'Axelweb\AwPickupStore\Form\CarrierSettingsFormType'
       - 'AwPickupStore'
 
+  axelweb.awpickupstore.form.type.schedule:
+    class: 'Axelweb\AwPickupStore\Form\ScheduleFormType'
+    parent: 'form.type.translatable.aware'
+    public: true
+    tags:
+      - { name: form.type }
+
+  axelweb.awpickupstore.form.schedule_data_provider:
+    class: 'Axelweb\AwPickupStore\Form\ScheduleFormDataProvider'
+
+  axelweb.awpickupstore.form.schedule_form_handler:
+    class: 'PrestaShop\PrestaShop\Core\Form\Handler'
+    arguments:
+      - '@form.factory'
+      - '@prestashop.core.hook.dispatcher'
+      - '@axelweb.awpickupstore.form.schedule_data_provider'
+      - 'Axelweb\AwPickupStore\Form\ScheduleFormType'
+      - 'AwPickupStore'
+

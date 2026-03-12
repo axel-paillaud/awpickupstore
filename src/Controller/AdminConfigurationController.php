@@ -17,27 +17,53 @@ class AdminConfigurationController extends FrameworkBundleAdminController
 {
     public function index(Request $request): Response
     {
-        $formHandler = $this->get('axelweb.awpickupstore.form.carrier_settings_form_handler');
+        $carriersHandler = $this->get('axelweb.awpickupstore.form.carrier_settings_form_handler');
+        $scheduleHandler = $this->get('axelweb.awpickupstore.form.schedule_form_handler');
 
-        $form = $formHandler->getForm();
-        $form->handleRequest($request);
+        $carriersForm = $carriersHandler->getForm();
+        $scheduleForm = $scheduleHandler->getForm();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $errors = $formHandler->save($form->getData());
+        $carriersForm->handleRequest($request);
+        $scheduleForm->handleRequest($request);
+
+        $activeTab = $request->query->get('tab', 'carriers');
+
+        if ($carriersForm->isSubmitted() && $carriersForm->isValid()) {
+            $errors = $carriersHandler->save($carriersForm->getData());
 
             if (empty($errors)) {
                 $this->addFlash('success', $this->trans('Successful update.', 'Admin.Notifications.Success'));
 
-                return $this->redirectToRoute('awpickupstore_form_configuration');
+                return $this->redirectToRoute('awpickupstore_form_configuration', ['tab' => 'carriers']);
             }
 
             foreach ($errors as $error) {
                 $this->addFlash('error', $error);
             }
+
+            $activeTab = 'carriers';
+        }
+
+        if ($scheduleForm->isSubmitted() && $scheduleForm->isValid()) {
+            $errors = $scheduleHandler->save($scheduleForm->getData());
+
+            if (empty($errors)) {
+                $this->addFlash('success', $this->trans('Successful update.', 'Admin.Notifications.Success'));
+
+                return $this->redirectToRoute('awpickupstore_form_configuration', ['tab' => 'schedule']);
+            }
+
+            foreach ($errors as $error) {
+                $this->addFlash('error', $error);
+            }
+
+            $activeTab = 'schedule';
         }
 
         return $this->render('@Modules/awpickupstore/views/templates/admin/form.html.twig', [
-            'carriersForm' => $form->createView(),
+            'carriersForm' => $carriersForm->createView(),
+            'scheduleForm' => $scheduleForm->createView(),
+            'activeTab'    => $activeTab,
         ]);
     }
 }

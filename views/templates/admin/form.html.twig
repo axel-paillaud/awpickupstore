@@ -1,6 +1,7 @@
 {% extends '@PrestaShop/Admin/layout.html.twig' %}
 
 {% form_theme carriersForm '@PrestaShop/Admin/TwigTemplateForm/prestashop_ui_kit.html.twig' %}
+{% form_theme scheduleForm  '@PrestaShop/Admin/TwigTemplateForm/prestashop_ui_kit.html.twig' %}
 
 {% block javascripts %}
   {{ parent() }}
@@ -8,65 +9,166 @@
 {% endblock %}
 
 {% block content %}
-  {{ form_start(carriersForm) }}
+<div>
 
-  <div class="card">
-    <h3 class="card-header">
-      <i class="material-icons">local_shipping</i>
-      {{ 'Pickup Store — Carrier Settings'|trans({}, 'Modules.Awpickupstore.Admin') }}
-    </h3>
+  {# Nav tabs #}
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link {{ activeTab == 'carriers' ? 'active' : '' }}"
+         id="tab-carriers"
+         data-toggle="tab"
+         href="#pane-carriers"
+         role="tab"
+         aria-controls="pane-carriers"
+         aria-selected="{{ activeTab == 'carriers' ? 'true' : 'false' }}">
+        <i class="material-icons">local_shipping</i>
+        {{ 'Carriers'|trans({}, 'Modules.Awpickupstore.Admin') }}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {{ activeTab == 'schedule' ? 'active' : '' }}"
+         id="tab-schedule"
+         data-toggle="tab"
+         href="#pane-schedule"
+         role="tab"
+         aria-controls="pane-schedule"
+         aria-selected="{{ activeTab == 'schedule' ? 'true' : 'false' }}">
+        <i class="material-icons">schedule</i>
+        {{ 'Opening hours'|trans({}, 'Modules.Awpickupstore.Admin') }}
+      </a>
+    </li>
+  </ul>
 
-    <div class="card-body">
-      {% if carriersForm.carriers|length == 0 %}
-        <p class="text-muted">
-          {{ 'No active carriers found. Create carriers in Shipping > Carriers first.'|trans({}, 'Modules.Awpickupstore.Admin') }}
-        </p>
-      {% else %}
-        <p class="text-muted mb-3">
-          {{ 'For each carrier, you can require an appointment date/time at checkout, show a store picker, and/or display a custom message below the carrier option.'|trans({}, 'Modules.Awpickupstore.Admin') }}
-        </p>
+  {# Tab content #}
+  <div class="tab-content">
 
-        <table class="table">
-          <thead>
-            <tr>
-              <th>{{ 'Carrier'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
-              <th class="text-center">{{ 'Require appointment'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
-              <th class="text-center">{{ 'Show store picker'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
-              <th>{{ 'Checkout message'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in carriersForm.carriers %}
-              <tr>
-                <td class="align-middle">
-                  <strong>{{ entry.vars.data.name }}</strong>
-                  {{ form_widget(entry.id_carrier) }}
-                </td>
-                <td class="text-center align-middle">
-                  {{ form_widget(entry.require_appointment) }}
-                </td>
-                <td class="text-center align-middle">
-                  {{ form_widget(entry.show_store_picker) }}
-                </td>
-                <td>
-                  {{ form_widget(entry.message) }}
-                  {{ form_errors(entry.message) }}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
-    </div>
+    {# Tab: Carriers #}
+    <div class="tab-pane fade {{ activeTab == 'carriers' ? 'show active' : '' }}"
+         id="pane-carriers"
+         role="tabpanel"
+         aria-labelledby="tab-carriers">
 
-    <div class="card-footer">
-      <div class="d-flex justify-content-end">
-        <button class="btn btn-primary" id="save-button">
-          {{ 'Save'|trans({}, 'Admin.Actions') }}
-        </button>
+      {{ form_start(carriersForm) }}
+      <div class="card">
+        <h3 class="card-header">
+          <i class="material-icons">local_shipping</i>
+          {{ 'Carrier Settings'|trans({}, 'Modules.Awpickupstore.Admin') }}
+        </h3>
+
+        <div class="card-body">
+          {% if carriersForm.carriers|length == 0 %}
+            <p class="text-muted">
+              {{ 'No active carriers found. Create carriers in Shipping > Carriers first.'|trans({}, 'Modules.Awpickupstore.Admin') }}
+            </p>
+          {% else %}
+            <p class="text-muted mb-3">
+              {{ 'For each carrier, you can require an appointment date/time at checkout, show a store picker, and/or display a custom message below the carrier option.'|trans({}, 'Modules.Awpickupstore.Admin') }}
+            </p>
+
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{{ 'Carrier'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+                  <th class="text-center">{{ 'Require appointment'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+                  <th class="text-center">{{ 'Show store picker'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+                  <th>{{ 'Checkout message'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in carriersForm.carriers %}
+                  <tr>
+                    <td class="align-middle">
+                      <strong>{{ entry.vars.data.name }}</strong>
+                      {{ form_widget(entry.id_carrier) }}
+                    </td>
+                    <td class="text-center align-middle">
+                      {{ form_widget(entry.require_appointment) }}
+                    </td>
+                    <td class="text-center align-middle">
+                      {{ form_widget(entry.show_store_picker) }}
+                    </td>
+                    <td>
+                      {{ form_widget(entry.message) }}
+                      {{ form_errors(entry.message) }}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        </div>
+
+        <div class="card-footer">
+          <div class="d-flex justify-content-end">
+            <button class="btn btn-primary" type="submit">
+              {{ 'Save'|trans({}, 'Admin.Actions') }}
+            </button>
+          </div>
+        </div>
       </div>
+      {{ form_end(carriersForm) }}
     </div>
-  </div>
 
-  {{ form_end(carriersForm) }}
+    {# Tab: Opening hours #}
+    <div class="tab-pane fade {{ activeTab == 'schedule' ? 'show active' : '' }}"
+         id="pane-schedule"
+         role="tabpanel"
+         aria-labelledby="tab-schedule">
+
+      {{ form_start(scheduleForm) }}
+      <div class="card">
+        <h3 class="card-header">
+          <i class="material-icons">schedule</i>
+          {{ 'Appointment opening hours'|trans({}, 'Modules.Awpickupstore.Admin') }}
+        </h3>
+
+        <div class="card-body">
+          <p class="text-muted mb-3">
+            {{ 'Define the days and hours during which customers can book an appointment. These constraints apply to all carriers with "Require appointment" enabled.'|trans({}, 'Modules.Awpickupstore.Admin') }}
+          </p>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ 'Day'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+                <th>{{ 'Open'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+                <th>{{ 'Opening time'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+                <th>{{ 'Closing time'|trans({}, 'Modules.Awpickupstore.Admin') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set days = {1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 0: 'Sunday'} %}
+              {% for jsDay, label in days %}
+                <tr>
+                  <td class="align-middle">
+                    <strong>{{ label|trans({}, 'Modules.Awpickupstore.Admin') }}</strong>
+                  </td>
+                  <td class="align-middle">
+                    {{ form_widget(attribute(scheduleForm, 'day_' ~ jsDay ~ '_enabled')) }}
+                  </td>
+                  <td>
+                    {{ form_widget(attribute(scheduleForm, 'day_' ~ jsDay ~ '_open')) }}
+                  </td>
+                  <td>
+                    {{ form_widget(attribute(scheduleForm, 'day_' ~ jsDay ~ '_close')) }}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card-footer">
+          <div class="d-flex justify-content-end">
+            <button class="btn btn-primary" type="submit">
+              {{ 'Save'|trans({}, 'Admin.Actions') }}
+            </button>
+          </div>
+        </div>
+      </div>
+      {{ form_end(scheduleForm) }}
+    </div>
+
+  </div>{# .tab-content #}
+</div>
 {% endblock %}
