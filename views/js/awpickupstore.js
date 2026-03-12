@@ -6,7 +6,7 @@
 
 /* awpickupstore — Front Office
  *
- * Carrier config (message + appointment) is embedded by hookDisplayBeforeCarrier
+ * Carrier config (message + appointment + store picker) is embedded by hookDisplayBeforeCarrier
  * as a JSON blob in #awpickupstore-config.
  *
  * On each carrier selection, JS injects the relevant HTML into the carrier's
@@ -70,44 +70,130 @@
     });
   }
 
-  function buildHtml(cfg) {
+  /** Build the store index keyed by id for fast lookup in the select change handler. */
+  function buildStoreIndex(stores) {
+    var index = {};
+    if (!stores) return index;
+    stores.forEach(function (s) {
+      index[s.id] = s;
+    });
+    return index;
+  }
+
+  function buildStorePicker(cfg) {
+    var i18n   = config.i18n;
+    var stores = cfg.stores || [];
+    var html   = '<div class="awpickupstore-store-picker mt-2">'
+      + '<p class="awpickupstore-store-picker__label">'
+      + '<i class="material-icons awpickupstore-icon">place</i> '
+      + i18n.store_label
+      + '</p>'
+      + '<select class="form-control awpickupstore-store-select">'
+      + '<option value="">' + i18n.store_placeholder + '</option>';
+
+    stores.forEach(function (s) {
+      html += '<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>';
+    });
+
+    html += '</select>'
+      + '<p class="awpickupstore-store-info" style="display:none"></p>'
+      + '<input type="hidden" name="awpickupstore_store_id">'
+      + '</div>';
+
+    return html;
+  }
+
+  function buildDatepicker(cfg) {
     var i18n = config.i18n;
+    return '<div class="awpickupstore-appointment mt-2">'
+      + '<p class="awpickupstore-appointment__label mb-2">'
+      + '<i class="material-icons awpickupstore-icon">event</i> '
+      + i18n.appointment_label
+      + '</p>'
+      + '<input type="text" class="form-control awpickupstore-datetime-picker" placeholder="' + i18n.date_placeholder + '" readonly>'
+      + '<input type="hidden" name="awpickupstore_datetime">'
+      + '</div>';
+  }
+
+  function buildHtml(cfg) {
     var html = '<div class="awpickupstore-extra">';
 
     if (cfg.message) {
       html += '<div class="awpickupstore-message alert alert-info mt-2 mb-2">' + cfg.message + '</div>';
     }
 
+    if (cfg.show_store_picker) {
+      html += buildStorePicker(cfg);
+    }
+
     if (cfg.require_appointment) {
-      html += '<div class="awpickupstore-appointment mt-2">'
-        + '<p class="awpickupstore-appointment__label mb-2">'
-        + '<i class="material-icons awpickupstore-icon">event</i> '
-        + i18n.appointment_label
-        + '</p>'
-        + '<input type="text" class="form-control awpickupstore-datetime-picker" placeholder="' + i18n.date_placeholder + '" readonly>'
-        + '<input type="hidden" name="awpickupstore_datetime">'
-        + '</div>';
+      html += buildDatepicker(cfg);
     }
 
     html += '</div>';
     return html;
   }
 
-  /** Initialise Flatpickr on the newly injected datetime input. */
+  /** Bind store select → show address info + populate hidden input. */
+  function initStorePicker(container, cfg) {
+    var select     = container.querySelector('.awpickupstore-store-select');
+    var infoEl     = container.querySelector('.awpickupstore-store-info');
+    var hiddenInput = container.querySelector('input[name="awpickupstore_store_id"]');
+    if (!select || !infoEl || !hiddenInput) return;
+
+    var storeIndex = buildStoreIndex(cfg.stores);
+
+    select.addEventListener('change', function () {
+      var id    = parseInt(select.value, 10);
+      var store = storeIndex[id];
+      hiddenInput.value = id || '';
+
+      if (store && store.address) {
+        infoEl.textContent  = store.address;
+        infoEl.style.display = '';
+      } else {
+        infoEl.style.display = 'none';
+      }
+    });
+  }
+
+  /** Initialise Flatpickr with schedule constraints. */
   function initFlatpickr(container, cfg) {
     var pickerInput = container.querySelector('.awpickupstore-datetime-picker');
     var hiddenInput = container.querySelector('input[name="awpickupstore_datetime"]');
     if (!pickerInput || !hiddenInput || !window.flatpickr) return;
+
+    var schedule = cfg.schedule || {};  // {jsDay: {open: "HH:MM", close: "HH:MM"}}
 
     var fpOptions = {
       enableTime: true,
       dateFormat: 'Y-m-d H:i',
       minDate: cfg.min_date,
       time_24hr: true,
-      onChange: function (selectedDates, dateStr) {
+      onChange: function (selectedDates, dateStr, fp) {
         hiddenInput.value = dateStr;
+
+        // Apply opening hours constraints for the selected day
+        if (selectedDates.length) {
+          var jsDay     = selectedDates[0].getDay();
+          var daySchedule = schedule[jsDay];
+          if (daySchedule) {
+            fp.set('minTime', daySchedule.open);
+            fp.set('maxTime', daySchedule.close);
+          } else {
+            fp.set('minTime', null);
+            fp.set('maxTime', null);
+          }
+        }
       },
     };
+
+    // Disable closed days if a schedule is configured
+    if (Object.keys(schedule).length) {
+      fpOptions.disable = [function (date) {
+        return !schedule[date.getDay()];
+      }];
+    }
 
     // Apply French locale if available
     if (config.locale_iso === 'fr' && flatpickr.l10ns && flatpickr.l10ns.fr) {
@@ -115,6 +201,14 @@
     }
 
     flatpickr(pickerInput, fpOptions);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   // Track the last injected carrier to avoid re-injecting on unrelated form changes
@@ -133,6 +227,10 @@
     if (!container) return;
 
     container.insertAdjacentHTML('beforeend', buildHtml(cfg));
+
+    if (cfg.show_store_picker) {
+      initStorePicker(container, cfg);
+    }
 
     if (cfg.require_appointment) {
       initFlatpickr(container, cfg);

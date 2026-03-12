@@ -99,19 +99,39 @@ class PickupStoreRepository
     }
 
     /**
-     * Insert or update an appointment for a given cart.
+     * Return all active stores with their name and address in the given language.
+     * Used to populate the store picker dropdown at checkout.
+     *
+     * @return array<int, array{id_store: string, name: string|null, city: string|null, postcode: string|null, address1: string|null}>
      */
-    public function upsertAppointment(int $idCart, string $datetime, ?int $idStore = null): bool
+    public function getActiveStores(int $idLang): array
     {
-        $storeValue = $idStore !== null ? $idStore : 'NULL';
+        return $this->db->executeS(
+            'SELECT s.`id_store`, sl.`name`, s.`city`, s.`postcode`, sl.`address1`
+             FROM `' . _DB_PREFIX_ . 'store` s
+             LEFT JOIN `' . _DB_PREFIX_ . 'store_lang` sl
+                ON s.`id_store` = sl.`id_store` AND sl.`id_lang` = ' . $idLang . '
+             WHERE s.`active` = 1
+             ORDER BY sl.`name` ASC'
+        ) ?: [];
+    }
+
+    /**
+     * Insert or update an appointment for a given cart.
+     * $datetime may be null for store-only selections (no appointment required).
+     */
+    public function upsertAppointment(int $idCart, ?string $datetime, ?int $idStore = null): bool
+    {
+        $storeValue    = $idStore    !== null ? $idStore                      : 'NULL';
+        $datetimeValue = $datetime   !== null ? '\'' . pSQL($datetime) . '\'' : 'NULL';
 
         return (bool) $this->db->execute(
             'INSERT INTO `' . _DB_PREFIX_ . 'awpickupstore_appointment`
                 (`id_cart`, `id_order`, `id_store`, `appointment_datetime`)
-             VALUES (' . $idCart . ', 0, ' . $storeValue . ', \'' . pSQL($datetime) . '\')
+             VALUES (' . $idCart . ', 0, ' . $storeValue . ', ' . $datetimeValue . ')
              ON DUPLICATE KEY UPDATE
                 `id_store`             = ' . $storeValue . ',
-                `appointment_datetime` = \'' . pSQL($datetime) . '\''
+                `appointment_datetime` = ' . $datetimeValue
         );
     }
 
@@ -128,17 +148,22 @@ class PickupStoreRepository
     }
 
     /**
-     * Get the appointment datetime for a given order, or null if none.
+     * Get appointment details for a given order: datetime and store name.
+     * Returns null if no appointment row exists for this order.
+     *
+     * @return array{appointment_datetime: string|null, store_name: string|null}|null
      */
-    public function getAppointmentByOrder(int $idOrder): ?string
+    public function getAppointmentByOrder(int $idOrder, int $idLang = 0): ?array
     {
-        $value = $this->db->getValue(
-            'SELECT `appointment_datetime`
-             FROM `' . _DB_PREFIX_ . 'awpickupstore_appointment`
-             WHERE `id_order` = ' . $idOrder
+        $row = $this->db->getRow(
+            'SELECT a.`appointment_datetime`, sl.`name` AS `store_name`
+             FROM `' . _DB_PREFIX_ . 'awpickupstore_appointment` a
+             LEFT JOIN `' . _DB_PREFIX_ . 'store_lang` sl
+                ON a.`id_store` = sl.`id_store` AND sl.`id_lang` = ' . $idLang . '
+             WHERE a.`id_order` = ' . $idOrder
         );
 
-        return $value ?: null;
+        return $row ?: null;
     }
 
     /**

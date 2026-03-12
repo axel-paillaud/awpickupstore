@@ -43,7 +43,7 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'awpickupstore_appointme
     `id_order`                     INT(10) UNSIGNED NOT NULL DEFAULT 0,
     `id_cart`                      INT(10) UNSIGNED NOT NULL,
     `id_store`                     INT(10) UNSIGNED DEFAULT NULL,
-    `appointment_datetime`         DATETIME NOT NULL,
+    `appointment_datetime`         DATETIME DEFAULT NULL,
     PRIMARY KEY (`id_awpickupstore_appointment`),
     UNIQUE KEY `id_cart` (`id_cart`),
     KEY `id_order` (`id_order`)

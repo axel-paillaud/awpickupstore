@@ -29,6 +29,7 @@ if (!defined('_PS_VERSION_')) {
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+use Axelweb\AwPickupStore\Form\ScheduleFormDataProvider;
 use Axelweb\AwPickupStore\Repository\PickupStoreRepository;
 
 class AwPickupStore extends Module
@@ -168,25 +169,55 @@ class AwPickupStore extends Module
 
     /**
      * Embed carrier config as JSON before the carrier list.
-     * JS reads this and injects message/appointment picker into each carrier's .carrier-extra-content div.
+     * JS reads this and injects message/appointment picker/store picker into each carrier's
+     * .carrier-extra-content div.
      */
     public function hookDisplayBeforeCarrier(array $params): string
     {
-        $idLang  = (int) $this->context->language->id;
+        $idLang   = (int) $this->context->language->id;
         $carriers = $this->repository->getAllCarriersWithConfig($idLang);
         $configMap = [];
         $minDate   = date('Y-m-d');
+
+        // Load stores and schedule lazily — only if a carrier needs them
+        $stores   = null;
+        $schedule = null;
 
         foreach ($carriers as $carrier) {
             if (!$carrier['message'] && !$carrier['require_appointment'] && !$carrier['show_store_picker']) {
                 continue;
             }
-            $configMap[(int) $carrier['id_carrier']] = [
+
+            $entry = [
                 'message'             => $carrier['message'] ?: null,
                 'require_appointment' => (bool) $carrier['require_appointment'],
                 'show_store_picker'   => (bool) $carrier['show_store_picker'],
                 'min_date'            => $minDate,
             ];
+
+            if ($entry['show_store_picker']) {
+                if ($stores === null) {
+                    $rawStores = $this->repository->getActiveStores($idLang);
+                    $stores = [];
+                    foreach ($rawStores as $s) {
+                        $stores[] = [
+                            'id'       => (int) $s['id_store'],
+                            'name'     => $s['name'] ?? '',
+                            'address'  => trim(($s['address1'] ?? '') . ', ' . ($s['city'] ?? ''), ', '),
+                        ];
+                    }
+                }
+                $entry['stores'] = $stores;
+            }
+
+            if ($entry['require_appointment']) {
+                if ($schedule === null) {
+                    $schedule = (new ScheduleFormDataProvider())->loadSchedule();
+                }
+                $entry['schedule'] = $schedule;
+            }
+
+            $configMap[(int) $carrier['id_carrier']] = $entry;
         }
 
         if (empty($configMap)) {
@@ -197,8 +228,11 @@ class AwPickupStore extends Module
             'carriers'   => $configMap,
             'locale_iso' => $this->context->language->iso_code,
             'i18n'       => [
-                'appointment_label' => $this->trans('Choose your appointment date and time', [], 'Modules.Awpickupstore.Shop'),
-                'date_placeholder'  => $this->trans('Select a date and time', [], 'Modules.Awpickupstore.Shop'),
+                'appointment_label'  => $this->trans('Choose your appointment date and time', [], 'Modules.Awpickupstore.Shop'),
+                'date_placeholder'   => $this->trans('Select a date and time', [], 'Modules.Awpickupstore.Shop'),
+                'store_label'        => $this->trans('Choose a collection point', [], 'Modules.Awpickupstore.Shop'),
+                'store_placeholder'  => $this->trans('-- Select a location --', [], 'Modules.Awpickupstore.Shop'),
+                'store_required_msg' => $this->trans('Please select a collection point.', [], 'Modules.Awpickupstore.Shop'),
             ],
         ], JSON_HEX_TAG | JSON_HEX_AMP));
 
@@ -206,12 +240,12 @@ class AwPickupStore extends Module
     }
 
     /**
-     * Validate appointment and store it by id_cart during checkout carrier step
+     * Validate appointment / store selection and store it by id_cart during checkout carrier step.
+     * actionCarrierProcess fires both on carrier-selection AJAX and on step confirmation.
+     * Only validate and save on explicit step confirmation (Continue button).
      */
     public function hookActionCarrierProcess(array $params): void
     {
-        // actionCarrierProcess fires both on carrier-selection AJAX and on step confirmation.
-        // Only validate and save on explicit step confirmation (Continue button).
         if (!Tools::getValue('confirmDeliveryOption')) {
             return;
         }
@@ -222,27 +256,46 @@ class AwPickupStore extends Module
         }
 
         $config = $this->repository->getCarrierConfig($idCarrier);
-
-        if (!$config || !$config['require_appointment']) {
+        if (!$config) {
             return;
         }
 
-        $datetime = Tools::getValue('awpickupstore_datetime');
-
-        if (empty($datetime)) {
-            $this->context->controller->errors[] = $this->trans(
-                'Please select an appointment date and time.',
-                [],
-                'Modules.Awpickupstore.Shop'
-            );
-
-            return;
-        }
-
-        $datetime = date('Y-m-d H:i:s', strtotime($datetime));
         $idCart   = (int) $params['cart']->id;
+        $datetime = null;
+        $idStore  = null;
 
-        $this->repository->upsertAppointment($idCart, $datetime);
+        // Validate appointment datetime
+        if ($config['require_appointment']) {
+            $raw = Tools::getValue('awpickupstore_datetime');
+            if (empty($raw)) {
+                $this->context->controller->errors[] = $this->trans(
+                    'Please select an appointment date and time.',
+                    [],
+                    'Modules.Awpickupstore.Shop'
+                );
+
+                return;
+            }
+            $datetime = date('Y-m-d H:i:s', strtotime($raw));
+        }
+
+        // Validate store selection
+        if ($config['show_store_picker']) {
+            $idStore = (int) Tools::getValue('awpickupstore_store_id');
+            if (!$idStore) {
+                $this->context->controller->errors[] = $this->trans(
+                    'Please select a collection point.',
+                    [],
+                    'Modules.Awpickupstore.Shop'
+                );
+
+                return;
+            }
+        }
+
+        if ($datetime !== null || $idStore !== null) {
+            $this->repository->upsertAppointment($idCart, $datetime, $idStore ?: null);
+        }
     }
 
     /**
@@ -261,7 +314,7 @@ class AwPickupStore extends Module
     }
 
     /**
-     * Display appointment info in the BO order detail page
+     * Display appointment / store info in the BO order detail page
      */
     public function hookDisplayAdminOrderMain(array $params): string
     {
@@ -270,16 +323,19 @@ class AwPickupStore extends Module
             return '';
         }
 
-        $datetime = $this->repository->getAppointmentByOrder($idOrder);
+        $idLang  = (int) $this->context->language->id;
+        $details = $this->repository->getAppointmentByOrder($idOrder, $idLang);
 
-        if (!$datetime) {
+        if (!$details) {
             return '';
         }
 
-        $this->context->smarty->assign(
-            'awpickupstore_appointment_datetime',
-            date('d/m/Y à H\hi', strtotime($datetime))
-        );
+        $this->context->smarty->assign([
+            'awpickupstore_datetime'   => !empty($details['appointment_datetime'])
+                ? date('d/m/Y à H\hi', strtotime($details['appointment_datetime']))
+                : null,
+            'awpickupstore_store_name' => $details['store_name'] ?? null,
+        ]);
 
         return $this->display(__FILE__, 'views/templates/hook/admin_order.tpl');
     }
