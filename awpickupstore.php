@@ -31,10 +31,12 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use Axelweb\AwPickupStore\Form\ScheduleFormDataProvider;
 use Axelweb\AwPickupStore\Repository\PickupStoreRepository;
+use Axelweb\AwPickupStore\Service\AppointmentMailService;
 
 class AwPickupStore extends Module
 {
     private PickupStoreRepository $repository;
+    private AppointmentMailService $mailService;
 
     public function __construct()
     {
@@ -305,7 +307,7 @@ class AwPickupStore extends Module
     }
 
     /**
-     * Attach appointment to the order once it is created
+     * Attach appointment to the order once it is created, then send confirmation email.
      */
     public function hookActionValidateOrder(array $params): void
     {
@@ -317,6 +319,29 @@ class AwPickupStore extends Module
         }
 
         $this->repository->attachOrderToAppointment($idCart, $idOrder);
+
+        $order    = $params['order'];
+        $customer = $params['customer'];
+        $idLang   = (int) $customer->id_lang;
+        $details  = $this->repository->getAppointmentByOrder($idOrder, $idLang);
+
+        if (!$details) {
+            return;
+        }
+
+        $datetime  = !empty($details['appointment_datetime'])
+            ? date('d/m/Y à H\hi', strtotime($details['appointment_datetime']))
+            : null;
+        $storeName = $details['store_name'] ?? null;
+
+        (new AppointmentMailService())->send(
+            $customer,
+            $order->reference,
+            $datetime,
+            $storeName,
+            $idLang,
+            (int) $this->context->shop->id
+        );
     }
 
     /**

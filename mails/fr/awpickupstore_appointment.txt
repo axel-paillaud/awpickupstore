@@ -1,0 +1,10 @@
+[{shop_url}]
+
+Bonjour {firstname} {lastname},
+
+Votre commande {order_reference} a bien été enregistrée.
+Voici le récapitulatif de votre retrait :
+
+{appointment_lines}
+
+{shop_name} [{shop_url}]

@@ -1,0 +1,10 @@
+[{shop_url}]
+
+Hello {firstname} {lastname},
+
+Your order {order_reference} has been placed.
+Here is your pickup summary:
+
+{appointment_lines}
+
+{shop_name} [{shop_url}]
