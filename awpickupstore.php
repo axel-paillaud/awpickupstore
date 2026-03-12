@@ -164,50 +164,17 @@ class AwPickupStore extends Module
      */
     public function hookDisplayBeforeCarrier(array $params): string
     {
-        $idLang   = (int) $this->context->language->id;
-        $carriers = $this->repository->getAllCarriersWithConfig($idLang);
-        $configMap = [];
+        $idLang    = (int) $this->context->language->id;
         $minDate   = date('Y-m-d');
+        $stores    = null;
+        $schedule  = null;
+        $configMap = [];
 
-        // Load stores and schedule lazily — only if a carrier needs them
-        $stores   = null;
-        $schedule = null;
-
-        foreach ($carriers as $carrier) {
-            if (!$carrier['message'] && !$carrier['require_appointment'] && !$carrier['show_store_picker']) {
-                continue;
+        foreach ($this->repository->getAllCarriersWithConfig($idLang) as $carrier) {
+            $entry = $this->buildCarrierEntry($carrier, $minDate, $stores, $schedule, $idLang);
+            if ($entry !== null) {
+                $configMap[(int) $carrier['id_carrier']] = $entry;
             }
-
-            $entry = [
-                'message'             => $carrier['message'] ?: null,
-                'require_appointment' => (bool) $carrier['require_appointment'],
-                'show_store_picker'   => (bool) $carrier['show_store_picker'],
-                'min_date'            => $minDate,
-            ];
-
-            if ($entry['show_store_picker']) {
-                if ($stores === null) {
-                    $rawStores = $this->repository->getActiveStores($idLang);
-                    $stores = [];
-                    foreach ($rawStores as $s) {
-                        $stores[] = [
-                            'id'       => (int) $s['id_store'],
-                            'name'     => $s['name'] ?? '',
-                            'address'  => trim(($s['address1'] ?? '') . ', ' . ($s['city'] ?? ''), ', '),
-                        ];
-                    }
-                }
-                $entry['stores'] = $stores;
-            }
-
-            if ($entry['require_appointment']) {
-                if ($schedule === null) {
-                    $schedule = (new ScheduleFormDataProvider())->loadSchedule();
-                }
-                $entry['schedule'] = $schedule;
-            }
-
-            $configMap[(int) $carrier['id_carrier']] = $entry;
         }
 
         if (empty($configMap)) {
@@ -227,6 +194,55 @@ class AwPickupStore extends Module
         ], JSON_HEX_TAG | JSON_HEX_AMP));
 
         return $this->display(__FILE__, 'views/templates/hook/before_carrier.tpl');
+    }
+
+    /**
+     * Build the JSON entry for one carrier, or return null if the carrier has no config.
+     * $stores and $schedule are loaded lazily on first need (passed by reference).
+     */
+    private function buildCarrierEntry(
+        array $carrier,
+        string $minDate,
+        ?array &$stores,
+        ?array &$schedule,
+        int $idLang
+    ): ?array {
+        if (!$carrier['message'] && !$carrier['require_appointment'] && !$carrier['show_store_picker']) {
+            return null;
+        }
+
+        $entry = [
+            'message'             => $carrier['message'] ?: null,
+            'require_appointment' => (bool) $carrier['require_appointment'],
+            'show_store_picker'   => (bool) $carrier['show_store_picker'],
+            'min_date'            => $minDate,
+        ];
+
+        if ($entry['show_store_picker']) {
+            $stores ??= $this->buildStoresForJson($idLang);
+            $entry['stores'] = $stores;
+        }
+
+        if ($entry['require_appointment']) {
+            $schedule ??= (new ScheduleFormDataProvider())->loadSchedule();
+            $entry['schedule'] = $schedule;
+        }
+
+        return $entry;
+    }
+
+    /**
+     * Map active PS stores to the lightweight shape expected by the front-office JSON.
+     *
+     * @return array<int, array{id: int, name: string, address: string}>
+     */
+    private function buildStoresForJson(int $idLang): array
+    {
+        return array_map(static fn (array $s): array => [
+            'id'      => (int) ($s['id_store']),
+            'name'    => $s['name']    ?? '',
+            'address' => trim(($s['address1'] ?? '') . ', ' . ($s['city'] ?? ''), ', '),
+        ], $this->repository->getActiveStores($idLang));
     }
 
     /**
