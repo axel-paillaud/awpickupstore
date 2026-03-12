@@ -151,16 +151,6 @@ class AwPickupStore extends Module
             ['position' => 'bottom', 'priority' => 195]
         );
         $this->context->controller->registerJavascript(
-            'module-awpickupstore-store',
-            'modules/' . $this->name . '/views/js/awpickupstore-store.js',
-            ['position' => 'bottom', 'priority' => 196]
-        );
-        $this->context->controller->registerJavascript(
-            'module-awpickupstore-datepicker',
-            'modules/' . $this->name . '/views/js/awpickupstore-datepicker.js',
-            ['position' => 'bottom', 'priority' => 197]
-        );
-        $this->context->controller->registerJavascript(
             'module-awpickupstore-script',
             'modules/' . $this->name . '/views/js/awpickupstore.js',
             ['position' => 'bottom', 'priority' => 200]
