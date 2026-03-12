@@ -94,6 +94,7 @@ class AwPickupStore extends Module
     public function uninstall(): bool
     {
         return parent::uninstall()
+            && Configuration::deleteByName('AWPICKUPSTORE_SCHEDULE')
             && $this->uninstallDb();
     }
 
@@ -227,7 +228,8 @@ class AwPickupStore extends Module
 
         if ($entry['require_appointment']) {
             $schedule ??= (new ScheduleFormDataProvider())->loadSchedule();
-            $entry['schedule'] = $schedule;
+            $entry['schedule']         = $schedule;
+            $entry['min_delay_hours']  = 2;
         }
 
         return $entry;

@@ -157,28 +157,54 @@
     });
   }
 
-  /** Initialise Flatpickr with schedule constraints. */
+  /** Initialise Flatpickr with schedule constraints and minimum booking delay. */
   function initFlatpickr(container, cfg) {
     var pickerInput = container.querySelector('.awpickupstore-datetime-picker');
     var hiddenInput = container.querySelector('input[name="awpickupstore_datetime"]');
     if (!pickerInput || !hiddenInput || !window.flatpickr) return;
 
-    var schedule = cfg.schedule || {};  // {jsDay: {open: "HH:MM", close: "HH:MM"}}
+    var schedule      = cfg.schedule || {};
+    var delayHours    = cfg.min_delay_hours || 0;
+
+    // Earliest bookable moment = now + delay
+    var minDateTime = new Date();
+    minDateTime.setHours(minDateTime.getHours() + delayHours);
+
+    /**
+     * Return the minTime string ("HH:MM") to apply for a given selected date,
+     * combining the schedule opening time and the booking delay for today.
+     */
+    function getMinTimeForDate(date) {
+      var daySchedule = schedule[date.getDay()];
+      if (!daySchedule) return null;
+
+      var open = daySchedule.open;  // "HH:MM"
+
+      // If the selected date is today, enforce the delay
+      var today = new Date();
+      if (date.toDateString() === today.toDateString()) {
+        var delayStr = pad(minDateTime.getHours()) + ':' + pad(minDateTime.getMinutes());
+        return delayStr > open ? delayStr : open;
+      }
+
+      return open;
+    }
+
+    function pad(n) { return n < 10 ? '0' + n : String(n); }
 
     var fpOptions = {
       enableTime: true,
       dateFormat: 'Y-m-d H:i',
-      minDate: cfg.min_date,
+      minDate: minDateTime,   // Date object: Flatpickr enforces date + time for today
       time_24hr: true,
       onChange: function (selectedDates, dateStr, fp) {
         hiddenInput.value = dateStr;
 
-        // Apply opening hours constraints for the selected day
         if (selectedDates.length) {
-          var jsDay     = selectedDates[0].getDay();
+          var jsDay       = selectedDates[0].getDay();
           var daySchedule = schedule[jsDay];
           if (daySchedule) {
-            fp.set('minTime', daySchedule.open);
+            fp.set('minTime', getMinTimeForDate(selectedDates[0]));
             fp.set('maxTime', daySchedule.close);
           } else {
             fp.set('minTime', null);
@@ -188,10 +214,20 @@
       },
     };
 
-    // Disable closed days if a schedule is configured
+    // Disable days that are closed in the schedule, and today if delay pushes past closing time
     if (Object.keys(schedule).length) {
       fpOptions.disable = [function (date) {
-        return !schedule[date.getDay()];
+        var daySchedule = schedule[date.getDay()];
+        if (!daySchedule) return true;
+
+        // Disable today if now + delay >= closing time
+        var today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+          var delayStr = pad(minDateTime.getHours()) + ':' + pad(minDateTime.getMinutes());
+          return delayStr >= daySchedule.close;
+        }
+
+        return false;
       }];
     }
 
