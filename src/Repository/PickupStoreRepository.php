@@ -101,13 +101,17 @@ class PickupStoreRepository
     /**
      * Insert or update an appointment for a given cart.
      */
-    public function upsertAppointment(int $idCart, string $datetime): bool
+    public function upsertAppointment(int $idCart, string $datetime, ?int $idStore = null): bool
     {
+        $storeValue = $idStore !== null ? $idStore : 'NULL';
+
         return (bool) $this->db->execute(
             'INSERT INTO `' . _DB_PREFIX_ . 'awpickupstore_appointment`
-                (`id_cart`, `id_order`, `appointment_datetime`)
-             VALUES (' . $idCart . ', 0, \'' . pSQL($datetime) . '\')
-             ON DUPLICATE KEY UPDATE `appointment_datetime` = \'' . pSQL($datetime) . '\''
+                (`id_cart`, `id_order`, `id_store`, `appointment_datetime`)
+             VALUES (' . $idCart . ', 0, ' . $storeValue . ', \'' . pSQL($datetime) . '\')
+             ON DUPLICATE KEY UPDATE
+                `id_store`             = ' . $storeValue . ',
+                `appointment_datetime` = \'' . pSQL($datetime) . '\''
         );
     }
 
