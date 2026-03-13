@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file original="ModulesAwpickupstoreShop.xlf" source-language="fr-FR" target-language="fr-FR" datatype="plaintext">
+    <body>
+      <trans-unit id="6fe1f72c171d7dc124203ebd1741a07d">
+        <source>-- Select a location --</source>
+        <target>-- Sélectionnez un lieu --</target>
+      </trans-unit>
+      <trans-unit id="d66b916fd5b83d65d34850c72a8e9803">
+        <source>Choose a collection point</source>
+        <target>Choisissez un point de retrait</target>
+      </trans-unit>
+      <trans-unit id="91aa6194af2e6363b02b0c4df1bc7bd0">
+        <source>Choose your appointment date and time</source>
+        <target>Choisissez votre date et heure de rendez-vous</target>
+      </trans-unit>
+      <trans-unit id="71b1e27ed3a25069c7661b76f892fd5d">
+        <source>Please select a collection point.</source>
+        <target>Veuillez sélectionner un point de retrait.</target>
+      </trans-unit>
+      <trans-unit id="2a04b194c84d6b5f0e5130652474f53b">
+        <source>Please select an appointment date and time.</source>
+        <target>Veuillez sélectionner une date et une heure de rendez-vous.</target>
+      </trans-unit>
+      <trans-unit id="043a5d82e30b5dbac71613f20048d086">
+        <source>Select a date and time</source>
+        <target>Sélectionnez une date et une heure</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

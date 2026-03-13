@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file original="ModulesAwpickupstoreAdmin.xlf" source-language="fr-FR" target-language="fr-FR" datatype="plaintext">
+    <body>
+      <trans-unit id="c71951c237f94dc4a1156a024799a0be">
+        <source>Appointment opening hours</source>
+        <target>Horaires de rendez-vous</target>
+      </trans-unit>
+      <trans-unit id="bb8956c67b82c7444a80c6b2433dd8b4">
+        <source>Are you sure you want to uninstall this module?</source>
+        <target>Êtes-vous sûr de vouloir désinstaller ce module ?</target>
+      </trans-unit>
+      <trans-unit id="914419aa32f04011357d3b604a86d7eb">
+        <source>Carrier</source>
+        <target>Transporteur</target>
+      </trans-unit>
+      <trans-unit id="9b70f56c29fc485d56ee84b62a9fbdfe">
+        <source>Carrier Settings</source>
+        <target>Paramètres des transporteurs</target>
+      </trans-unit>
+      <trans-unit id="1d6af794b2599c1407a83029a09d1ecf">
+        <source>Carriers</source>
+        <target>Transporteurs</target>
+      </trans-unit>
+      <trans-unit id="8a3ca411ae38c52bff1b436f2b182e5e">
+        <source>Checkout message</source>
+        <target>Message affiché au paiement</target>
+      </trans-unit>
+      <trans-unit id="7d9cb787a2770759855db528d98504c2">
+        <source>Closing time</source>
+        <target>Heure de fermeture</target>
+      </trans-unit>
+      <trans-unit id="6486224c408a42b5cae7f10af82e7227">
+        <source>Customer can select a pickup store (event stand) at checkout.</source>
+        <target>Le client peut sélectionner un point de retrait (stand d'événement) au moment du paiement.</target>
+      </trans-unit>
+      <trans-unit id="3362accca7699f7a70dd40dfa6b6f7f1">
+        <source>Customer must choose a date and time at checkout.</source>
+        <target>Le client doit choisir une date et une heure au moment du paiement.</target>
+      </trans-unit>
+      <trans-unit id="03727ac48595a24daed975559c944a44">
+        <source>Day</source>
+        <target>Jour</target>
+      </trans-unit>
+      <trans-unit id="8ff98d155ebd15845ff02f2fd403d73e">
+        <source>Define the days and hours during which customers can book an appointment. These constraints apply to all carriers with "Require appointment" enabled.</source>
+        <target>Définissez les jours et horaires pendant lesquels les clients peuvent prendre rendez-vous. Ces contraintes s'appliquent à tous les transporteurs avec l'option « Rendez-vous obligatoire » activée.</target>
+      </trans-unit>
+      <trans-unit id="84c4176ae355b6b193609fdc2d5d5fe6">
+        <source>Displayed below the carrier at checkout (e.g. pickup address and event date). Leave empty for no message.</source>
+        <target>Affiché sous le transporteur au moment du paiement (ex. : adresse de retrait et date de l'événement). Laissez vide pour ne pas afficher de message.</target>
+      </trans-unit>
+      <trans-unit id="18771ea3215f53791171c778465f47e8">
+        <source>For each carrier, you can require an appointment date/time at checkout, show a store picker, and/or display a custom message below the carrier option.</source>
+        <target>Pour chaque transporteur, vous pouvez exiger une date/heure de rendez-vous au moment du paiement, afficher un sélecteur de point de retrait et/ou afficher un message personnalisé sous l'option du transporteur.</target>
+      </trans-unit>
+      <trans-unit id="d01dc1d3c63a48d23d6ec7f0276647d8">
+        <source><![CDATA[No active carriers found. Create carriers in Shipping > Carriers first.]]></source>
+        <target><![CDATA[Aucun transporteur actif trouvé. Créez des transporteurs dans Livraison > Transporteurs d'abord.]]></target>
+      </trans-unit>
+      <trans-unit id="c3bf447eabe632720a3aa1a7ce401274">
+        <source>Open</source>
+        <target>Ouvert</target>
+      </trans-unit>
+      <trans-unit id="80a0c205cd57b22fca7f174253870300">
+        <source>Opening hours</source>
+        <target>Horaires d'ouverture</target>
+      </trans-unit>
+      <trans-unit id="59b029f377a9b3802fc3cc37e9953d0c">
+        <source>Opening time</source>
+        <target>Heure d'ouverture</target>
+      </trans-unit>
+      <trans-unit id="f27995613293e3df60008129d5cbee68">
+        <source>Pickup Store</source>
+        <target>Pickup Store</target>
+      </trans-unit>
+      <trans-unit id="4205cf8e861a2aec3b408743ec6ad485">
+        <source>Prestashop module to add temporary in-store pickup options and specify an appointment date.</source>
+        <target>Module PrestaShop pour ajouter des options de retrait en magasin temporaires et spécifier une date de rendez-vous.</target>
+      </trans-unit>
+      <trans-unit id="0679ba62a4dde6e9a2dd8e8e6df91d12">
+        <source>Require appointment</source>
+        <target>Rendez-vous obligatoire</target>
+      </trans-unit>
+      <trans-unit id="4d1b6cab666e8593864466dad1df4890">
+        <source>Show store picker</source>
+        <target>Afficher le sélecteur de point de retrait</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
