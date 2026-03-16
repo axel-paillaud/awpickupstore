@@ -10,7 +10,7 @@
  * as a JSON blob in #awpickupstore-config.
  *
  * On each carrier selection, JS injects the relevant HTML into the carrier's
- * .carrier-extra-content div (which is inside #js-delivery form, so inputs submit).
+ * .delivery-option__extra div (which is inside #js-delivery form, so inputs submit).
  *
  * Triggers:
  * - DOMContentLoaded: initial selected carrier
@@ -42,21 +42,14 @@
   }
 
   /**
-   * Find the .carrier-extra-content div associated with a given carrier.
-   * Structure: .delivery-option (contains radio) + .carrier-extra-content (next sibling).
+   * Find the extra content container associated with a given carrier.
    */
   function findExtraContent(carrierId) {
     var radio = document.getElementById('delivery_option_' + carrierId);
     if (!radio) return null;
     var deliveryOption = radio.closest('.delivery-option');
     if (!deliveryOption) return null;
-    var el = deliveryOption.nextElementSibling;
-    while (el) {
-      if (el.classList.contains('carrier-extra-content')) return el;
-      if (el.classList.contains('delivery-option')) break;
-      el = el.nextElementSibling;
-    }
-    return null;
+    return deliveryOption.querySelector('.delivery-option__extra');
   }
 
   /** Remove any previously injected awpickupstore content (destroy Flatpickr first). */
