@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file original="ModulesAwpickupstorePdf_invoice.xlf" source-language="fr-FR" target-language="fr-FR" datatype="plaintext">
+    <body>
+      <trans-unit id="c932726a8d0f4da40bf3a33429138fa2">
+        <source>Pickup appointment</source>
+        <target>Retrait Click &amp; Collect</target>
+      </trans-unit>
+      <trans-unit id="c73758a98ef0cb2979c8f9250543603b">
+        <source>Date and time:</source>
+        <target>Date et heure :</target>
+      </trans-unit>
+      <trans-unit id="55a381ca33f5ceeb2b86e26ecc7f02ef">
+        <source>Collection point:</source>
+        <target>Point de retrait :</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

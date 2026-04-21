@@ -44,7 +44,7 @@ class AwPickupStore extends Module
 
         $this->name = 'awpickupstore';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.0.0';
+        $this->version = '1.0.1';
         $this->author = 'Axelweb';
         $this->need_instance = 1;
 
@@ -80,7 +80,8 @@ class AwPickupStore extends Module
             && $this->registerHook('displayBeforeCarrier')
             && $this->registerHook('actionCarrierProcess')
             && $this->registerHook('actionValidateOrder')
-            && $this->registerHook('displayAdminOrderMain');
+            && $this->registerHook('displayAdminOrderMain')
+            && $this->registerHook('displayPDFInvoice');
 
         // Prevent 'Unable to generate a URL for the named route [...]' error,
         // clear Symfony cache
@@ -344,6 +345,33 @@ class AwPickupStore extends Module
             $idLang,
             (int) $this->context->shop->id
         );
+    }
+
+    /**
+     * Inject pickup appointment info into the invoice PDF
+     */
+    public function hookDisplayPDFInvoice(array $params): string
+    {
+        $idOrder = (int) ($params['object']->id_order ?? 0);
+        if (!$idOrder) {
+            return '';
+        }
+
+        $idLang  = (int) $this->context->language->id;
+        $details = $this->repository->getAppointmentByOrder($idOrder, $idLang);
+
+        if (!$details) {
+            return '';
+        }
+
+        $this->context->smarty->assign([
+            'awpickupstore_datetime'   => !empty($details['appointment_datetime'])
+                ? date('d/m/Y à H\hi', strtotime($details['appointment_datetime']))
+                : null,
+            'awpickupstore_store_name' => $details['store_name'] ?? null,
+        ]);
+
+        return $this->display(__FILE__, 'views/templates/hook/pdf_invoice.tpl');
     }
 
     /**
